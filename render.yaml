@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: dojo-pass-traits
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PUBLIC_BASE_URL # e.g. https://dojo-pass-traits.onrender.com
+        sync: false
+      - key: DOJO_PASS_BASE_SEPOLIA # TestDojoPass address from burner step D1
+        sync: false
+      - key: DOJO_PASS_MONAD_TESTNET
+        sync: false
