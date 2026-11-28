@@ -10,7 +10,8 @@
     "start": "node dist/src/server.js",
     "dev": "tsx src/server.ts",
     "test": "node --import tsx --test test/*.test.ts",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "contracts:build": "node .claude/skills/solidity-verify/scripts/build.mjs"
   },
   "dependencies": {
     "express": "4.22.3",
