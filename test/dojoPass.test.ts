@@ -66,7 +66,7 @@ test('aggregator: NoPassError when holder has no pass on that chain', async () =
 function sample(over: Partial<PassAttributes> = {}): PassAttributes {
   const virtues = Object.fromEntries(VIRTUES.map((v, i) => [v, { level: i % 5, recorded: i < 5 }])) as PassAttributes['virtues'];
   return {
-    chain: 'monad', holder: HOLDER, practitioner: true, passPurchasedAt: NOW, passAgeDays: 19, recordedTrades: 0,
+    chain: 'monad', holder: HOLDER, practitioner: true, passPurchasedAt: NOW, passAgeDays: 19, epochsHeld: 2, weightKg: 14, weightClass: 'Paper', tenureBonus: 0, honorStanding: 0, recordedTrades: 0,
     disciplineVolumeUsd: NOT_RECORDED, checkInStreak: NOT_RECORDED, totalCheckIns: NOT_RECORDED,
     homeChain: 'monad', standing: 0, rank: 'Tsurano', virtues, ...over,
   };
@@ -146,4 +146,71 @@ test('testnet: home chain is the earliest pass among configured testnets', async
 
 test('loadChains rejects a malformed registry address', () => {
   assert.throws(() => loadChains({ DOJO_PASS_MONAD_TESTNET: '0x123' }), /not an address/);
+});
+
+test('weight: epochs are whole weeks, weight steps 7 kg per epoch', async () => {
+  const { epochsHeldFromDays, weightClassFromEpochs, tenureBonusFromEpochs, EPOCH_DAYS, KG_PER_EPOCH } = await import('../src/aggregator.js');
+  assert.equal(EPOCH_DAYS, 7);
+  assert.equal(KG_PER_EPOCH, 7);
+  assert.equal(epochsHeldFromDays(6), 0); // a partial week does not count
+  assert.equal(epochsHeldFromDays(7), 1);
+  assert.equal(epochsHeldFromDays(13), 1);
+  assert.equal(epochsHeldFromDays(14), 2);
+  assert.equal(epochsHeldFromDays(365), 52);
+});
+
+test('weight classes: Paper 0-3, Wood 4-12, Stone 13-25, Iron 26-51, Mountain 52+', async () => {
+  const { weightClassFromEpochs: c } = await import('../src/aggregator.js');
+  assert.equal(c(0), 'Paper');
+  assert.equal(c(3), 'Paper');
+  assert.equal(c(4), 'Wood');
+  assert.equal(c(12), 'Wood');
+  assert.equal(c(13), 'Stone');
+  assert.equal(c(25), 'Stone');
+  assert.equal(c(26), 'Iron');
+  assert.equal(c(51), 'Iron');
+  assert.equal(c(52), 'Mountain');
+});
+
+test('tenure bonus: +1 per 5 epochs, capped at +10 from 50 epochs', async () => {
+  const { tenureBonusFromEpochs: t } = await import('../src/aggregator.js');
+  assert.equal(t(4), 0);
+  assert.equal(t(5), 1);
+  assert.equal(t(49), 9);
+  assert.equal(t(50), 10);
+  assert.equal(t(500), 10);
+});
+
+test('aggregator: tenure bonus adds to standing, rank uses the bonus, capped at 100', async () => {
+  const NOW = 1_800_000_000;
+  const heldFor = (days: number, r: PassReader): PassReader => ({
+    ...r,
+    async pass(cfg, h) { return { ...(await r.pass(cfg, h)), purchasedAt: NOW - days * 86400 }; },
+  });
+  // 260 days held = 37 epochs -> bonus 7; honor 70 -> standing 77 -> Bushido Master
+  const a = await getPassAttributes('base', HOLDER, heldFor(260, stubReader({ honor: 70 })), NOW);
+  assert.equal(a.passAgeDays, 260);
+  assert.equal(a.epochsHeld, 37);
+  assert.equal(a.weightKg, 259);
+  assert.equal(a.weightClass, 'Iron');
+  assert.equal(a.tenureBonus, 7);
+  assert.equal(a.honorStanding, 70);
+  assert.equal(a.standing, 77);
+  assert.equal(a.rank, 'Bushido Master');
+  // Cap: honor 95 + bonus 10 must not exceed 100
+  const b = await getPassAttributes('base', HOLDER, heldFor(700, stubReader({ honor: 95 })), NOW);
+  assert.equal(b.tenureBonus, 10);
+  assert.equal(b.standing, 100);
+  assert.equal(b.rank, 'Shogun');
+});
+
+test('metadata: weight attributes are number traits except Weight Class', async () => {
+  const NOW = 1_800_000_000;
+  const a = await getPassAttributes('base', HOLDER, stubReader({ honor: 40 }), NOW);
+  const meta = buildMetadata(a, 'https://x.test');
+  const byName = Object.fromEntries(meta.attributes.map((t: any) => [t.trait_type, t]));
+  assert.equal(byName['Epochs Held'].display_type, 'number');
+  assert.equal(byName['Weight Carried (kg)'].display_type, 'number');
+  assert.equal(byName['Weight Class'].display_type, undefined);
+  assert.equal(byName['Tenure Bonus'], undefined);
 });
