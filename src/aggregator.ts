@@ -18,6 +18,15 @@ export interface PassAttributes {
   practitioner: boolean;
   passPurchasedAt: number; // unix seconds
   passAgeDays: number;
+  /** Full weeks held. Steps up only when an epoch completes. */
+  epochsHeld: number;
+  /** Epochs held x 7 kg. */
+  weightKg: number;
+  weightClass: WeightClass;
+  /** +1 per 5 epochs, capped at +10 (reached at 50 epochs). */
+  tenureBonus: number;
+  /** HONOR standing before the tenure bonus, 0-100. */
+  honorStanding: number;
   recordedTrades: Maybe<number>;
   disciplineVolumeUsd: Maybe<number>;
   checkInStreak: Maybe<number>;
@@ -26,6 +35,31 @@ export interface PassAttributes {
   standing: number; // 0-100
   rank: Rank;
   virtues: Record<Virtue, { level: number; recorded: boolean }>;
+}
+
+export type WeightClass = 'Paper' | 'Wood' | 'Stone' | 'Iron' | 'Mountain';
+
+export const EPOCH_DAYS = 7;
+export const KG_PER_EPOCH = 7;
+export const TENURE_MAX_BONUS = 10;
+
+/** Weeks held. Floors partial weeks, so the weight only steps when an epoch completes. */
+export function epochsHeldFromDays(passAgeDays: number): number {
+  return Math.max(0, Math.floor(passAgeDays / EPOCH_DAYS));
+}
+
+/** Paper 0-3, Wood 4-12, Stone 13-25, Iron 26-51, Mountain 52+ epochs. */
+export function weightClassFromEpochs(epochs: number): WeightClass {
+  if (epochs >= 52) return 'Mountain';
+  if (epochs >= 26) return 'Iron';
+  if (epochs >= 13) return 'Stone';
+  if (epochs >= 4) return 'Wood';
+  return 'Paper';
+}
+
+/** min(10, floor(epochs / 5)): +1 per 5 epochs held, capped so behaviour stays dominant. */
+export function tenureBonusFromEpochs(epochs: number): number {
+  return Math.min(TENURE_MAX_BONUS, Math.floor(epochs / 5));
 }
 
 export class NoPassError extends Error {
@@ -112,13 +146,22 @@ export async function getPassAttributes(
     virtues[v] = honor && i >= 0 ? { level: virtueLevel(honor.virtueScores[i] ?? 0), recorded: true } : { level: 0, recorded: false };
   }
 
-  const standing = honor ? Math.max(0, Math.min(100, honor.honorScore)) : 0;
+  const passAgeDays = Math.max(0, Math.floor((now - mine.purchasedAt) / 86400));
+  const epochsHeld = epochsHeldFromDays(passAgeDays);
+  const tenureBonus = tenureBonusFromEpochs(epochsHeld);
+  const honorStanding = honor ? Math.max(0, Math.min(100, honor.honorScore)) : 0;
+  const standing = Math.min(100, honorStanding + tenureBonus);
   return {
     chain,
     holder,
     practitioner: mine.practitioner,
     passPurchasedAt: mine.purchasedAt,
-    passAgeDays: Math.max(0, Math.floor((now - mine.purchasedAt) / 86400)),
+    passAgeDays,
+    epochsHeld,
+    weightKg: epochsHeld * KG_PER_EPOCH,
+    weightClass: weightClassFromEpochs(epochsHeld),
+    tenureBonus,
+    honorStanding,
     recordedTrades: honor ? honor.tradeCount : NOT_RECORDED,
     disciplineVolumeUsd: NOT_RECORDED,
     checkInStreak: NOT_RECORDED,
