@@ -213,4 +213,9 @@ test('metadata: weight attributes are number traits except Weight Class', async 
   assert.equal(byName['Weight Carried (kg)'].display_type, 'number');
   assert.equal(byName['Weight Class'].display_type, undefined);
   assert.equal(byName['Tenure Bonus'], undefined);
+  // 37 epochs = 259 kg; per-day figure is weight / 365, rounded to 3 dp
+  const a37 = await getPassAttributes('base', HOLDER, { ...stubReader({ honor: 40 }), async pass(c: any, h: any) { return { has: true, purchasedAt: NOW - 260 * 86400, practitioner: true }; } } as any, NOW);
+  const per = Object.fromEntries(buildMetadata(a37, 'https://x.test').attributes.map((x: any) => [x.trait_type, x.value]));
+  assert.equal(per['Weight Carried (kg)'], 259);
+  assert.equal(per['Weight per Day (kg)'], 0.71);
 });

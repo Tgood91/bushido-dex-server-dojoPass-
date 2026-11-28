@@ -26,6 +26,7 @@ export function buildMetadata(a: PassAttributes, baseUrl: string) {
     num('Pass Age (days)', a.passAgeDays),
     num('Epochs Held', a.epochsHeld),
     num('Weight Carried (kg)', a.weightKg),
+    num('Weight per Day (kg)', Math.round((a.weightKg / 365) * 1000) / 1000),
     { trait_type: 'Weight Class', value: a.weightClass },
     maybeNum('Recorded Trades', a.recordedTrades),
     maybeNum('Discipline Volume (USD)', a.disciplineVolumeUsd),
