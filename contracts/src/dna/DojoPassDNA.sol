@@ -9,18 +9,17 @@ import "./IContractURI.sol";
 import "./IDojoPassDNA.sol";
 
 /// @title Dojo Pass DNA
-/// @notice A living Dojo Pass, using Zerion DNA 1.0 (Ethereum 0x9322…848bf) as the template: a plain
-/// ERC-721 whose traits live behind an owner-set base URI and are recomputed off-chain from the
-/// holder's practice (trades recorded, virtues levelled), so the pass evolves without metadata writes.
+/// @notice A living Bushido Dojo Pass: an ERC-721 whose traits live behind an owner-set base URI and
+/// are recomputed off-chain from the holder's practice (trades recorded, virtues levelled), so the
+/// pass evolves without metadata writes.
 ///
-/// Kept from Zerion DNA: Ownable, Pausable (deploys paused), contractURI, totalSupply, setBaseURI.
-/// Changed for the Dojo Pass:
+/// Bushido design:
+///  - Ownable + Pausable (deploys paused), contractURI, totalSupply, setBaseURI;
 ///  - mint is gated on the live Dojo Pass registry and costs `mintPrice` (0.0001 ether at deploy);
 ///  - tokenId = uint160(holder): one pass per wallet, mapping 1:1 to the address-keyed trait service;
 ///  - soulbound (ERC-5192): a discipline record is earned, not traded; holder may burn, owner may
 ///    burn only passes whose registry pass was revoked;
 ///  - ERC-4906 refresh events; plain _mint (a token that never moves needs no receiver callback).
-/// Dropped: sequential ids, the OpenSea proxy registry (no code on Base/Monad, would revert).
 contract DojoPassDNA is Ownable, Pausable, ERC721, IContractURI, IERC5192, IDojoPassDNA {
     /// @notice The live Dojo Pass registry on this chain.
     IDojoPass public immutable dojoPass;
@@ -37,7 +36,7 @@ contract DojoPassDNA is Ownable, Pausable, ERC721, IContractURI, IERC5192, IDojo
     // Prefix of each tokenURI
     string internal baseURI;
 
-    /// @notice Creates Dojo Pass DNA for `registry` (paused, like Zerion DNA)
+    /// @notice Creates Dojo Pass DNA for `registry` (deploys paused; the owner opens minting)
     constructor(IDojoPass registry) ERC721("Dojo Pass DNA", "DOJODNA") {
         if (address(registry) == address(0)) revert ZeroAddress();
         dojoPass = registry;

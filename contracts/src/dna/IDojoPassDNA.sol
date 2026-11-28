@@ -17,9 +17,9 @@ interface IERC5192 {
     function locked(uint256 tokenId) external view returns (bool);
 }
 
-/// @notice Dojo Pass DNA. Shape follows Zerion DNA's IZerionDNA; additions are marked.
+/// @notice Bushido Dojo Pass DNA.
 interface IDojoPassDNA is IERC721 {
-    // ERC-4906: tells marketplaces to re-fetch metadata (addition)
+    // ERC-4906: tells marketplaces to re-fetch metadata
     event MetadataUpdate(uint256 tokenId);
     event BatchMetadataUpdate(uint256 fromTokenId, uint256 toTokenId);
     event MintPriceSet(uint256 price);
@@ -41,13 +41,13 @@ interface IDojoPassDNA is IERC721 {
     /// @notice Mint your pass. Requires a Dojo Pass on this chain's registry and exactly `mintPrice`.
     function mint() external payable;
 
-    /// @notice Holder burns their own pass (addition).
+    /// @notice Holder burns their own pass.
     function burn() external;
 
-    /// @notice Owner burns a pass whose registry pass was revoked (addition).
+    /// @notice Owner burns a pass whose registry pass was revoked.
     function burnRevoked(address holder) external;
 
-    /// @notice Ask marketplaces to re-fetch one pass after it evolved. Holder or owner (addition).
+    /// @notice Ask marketplaces to re-fetch one pass after it evolved. Holder or owner.
     function refreshMetadata(uint256 tokenId) external;
 
     function setMintPrice(uint256 newPrice) external;

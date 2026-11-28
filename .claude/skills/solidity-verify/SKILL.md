@@ -1,6 +1,6 @@
 ---
 name: solidity-verify
-description: Reproduce, check and explorer-verify the Dojo Pass DNA contracts (Zerion DNA 1.0 template) and the live contracts this trait service reads. Use when compiling DojoPassDNA or TestDojoPass, checking that a deployed address runs our code, confirming the Dojo Pass registry / HONOR selectors in src/chains.ts against mainnet bytecode, or submitting source verification to Basescan / Monadscan (Etherscan V2 API). Node only, no Foundry needed.
+description: Reproduce, check and explorer-verify the Bushido Dojo Pass DNA contracts and the live contracts this trait service reads. Use when compiling DojoPassDNA or TestDojoPass, checking that a deployed address runs our code, confirming the Dojo Pass registry / HONOR selectors in src/chains.ts against mainnet bytecode, or submitting source verification to Basescan / Monadscan (Etherscan V2 API). Node only, no Foundry needed.
 ---
 
 # Solidity verify

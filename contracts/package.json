@@ -1,7 +1,7 @@
 {
   "name": "dojopass-dna-contracts",
   "private": true,
-  "description": "Dojo Pass DNA (Zerion DNA 1.0 template): sources pinned for reproducible builds and explorer verification",
+  "description": "Bushido Dojo Pass DNA: sources pinned for reproducible builds and explorer verification",
   "type": "module",
   "devDependencies": {
     "@openzeppelin/contracts": "4.9.6",
